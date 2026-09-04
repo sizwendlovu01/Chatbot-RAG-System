@@ -1,0 +1,174 @@
+{
+  "name": "ZAIO Handbook RAG Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "options": {}
+      },
+      "id": "chat-trigger-1",
+      "name": "When chat message received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [-400, 300],
+      "webhookId": "zaio-rag-chat"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://YOUR-VERCEL-DEPLOYMENT.vercel.app/ask",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"question\": $json.chatInput } }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "http-request-1",
+      "name": "Call RAG API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-160, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.source }}",
+              "rightValue": "N/A",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-found-1",
+      "name": "Answer found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [80, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-1",
+              "name": "reply",
+              "type": "string",
+              "value": "={{ $json.answer }}\n\n📄 Source: {{ $json.source }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-formatted-1",
+      "name": "Format answer with source",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [320, 200]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-2",
+              "name": "reply",
+              "type": "string",
+              "value": "={{ $json.answer }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-not-found-1",
+      "name": "Format refusal message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [320, 420]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.reply }}",
+        "options": {}
+      },
+      "id": "respond-1",
+      "name": "Respond to chat",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.2,
+      "position": [560, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "resource": "message",
+        "operation": "post",
+        "channel": "#zaio-bootcamp-help",
+        "text": "={{ $json.reply }}",
+        "options": {}
+      },
+      "id": "slack-optional-1",
+      "name": "Also post to Slack (optional)",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [560, 480],
+      "disabled": true
+    }
+  ],
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          { "node": "Call RAG API", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Call RAG API": {
+      "main": [
+        [
+          { "node": "Answer found?", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Answer found?": {
+      "main": [
+        [
+          { "node": "Format answer with source", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "Format refusal message", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Format answer with source": {
+      "main": [
+        [
+          { "node": "Respond to chat", "type": "main", "index": 0 },
+          { "node": "Also post to Slack (optional)", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Format refusal message": {
+      "main": [
+        [
+          { "node": "Respond to chat", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "meta": {
+    "instanceId": "zaio-rag-assistant-workflow"
+  },
+  "notes": "1) Import into n8n. 2) Replace the URL in 'Call RAG API' with your deployed Vercel endpoint, e.g. https://your-project.vercel.app/ask. 3) The chat trigger gives you a shareable public chat URL out of the box. 4) Enable the optional Slack node (and configure Slack credentials) if you also want responses forwarded to a Slack channel; equivalent nodes exist in n8n for Discord, Telegram, WhatsApp, Microsoft Teams, and email."
+}
