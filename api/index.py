@@ -28,11 +28,9 @@ from pydantic import BaseModel, Field
 
 from rag.retriever import Retriever
 from rag.llm import ask_grok
+from api.ui import CHAT_UI_HTML
 
 NOT_FOUND_MSG = "I could not find that information in the available knowledge base."
-
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PUBLIC_DIR = os.path.join(PROJECT_ROOT, "public")
 
 app = FastAPI(
     title="ZAIO Student Handbook RAG Assistant",
@@ -75,21 +73,8 @@ class AskResponse(BaseModel):
 
 @app.get("/", response_class=HTMLResponse)
 def root():
-    """Serve the chat UI (public/index.html) at the root URL."""
-    index_path = os.path.join(PUBLIC_DIR, "index.html")
-    try:
-        with open(index_path, "r", encoding="utf-8") as f:
-            return HTMLResponse(content=f.read())
-    except FileNotFoundError:
-        # Fallback: if the UI file is missing for some reason, don't crash -
-        # show the same JSON status this endpoint used to return.
-        return HTMLResponse(
-            content=(
-                "<h1>ZAIO Student Handbook RAG Assistant</h1>"
-                "<p>UI file not found. POST /ask with "
-                "<code>{\"question\": \"...\"}</code> to use the API.</p>"
-            )
-        )
+    """Serve the chat UI (embedded HTML, see api/ui.py) at the root URL."""
+    return HTMLResponse(content=CHAT_UI_HTML)
 
 
 @app.get("/api/status")

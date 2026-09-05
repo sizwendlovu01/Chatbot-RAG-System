@@ -1,0 +1,116 @@
+﻿"""
+api/ui.py
+---------
+The chat UI, embedded as a Python string constant.
+"""
+
+CHAT_UI_HTML = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ZAIO Handbook Assistant</title>
+<style>
+  :root { --navy:#0f1c33; --accent:#f5a623; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f4f5f7; color: #1a1a1a;
+  }
+  header {
+    background: var(--navy); color: #fff; padding: 28px 20px; text-align: center;
+  }
+  header h1 { margin: 0 0 4px; font-size: 1.4rem; font-weight: 600; }
+  header p { margin: 0; opacity: 0.75; font-size: 0.9rem; }
+  main { max-width: 720px; margin: 0 auto; padding: 24px 16px 60px; }
+  .card {
+    background: #fff; border-radius: 12px; padding: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  textarea {
+    width: 100%; min-height: 80px; padding: 12px; border-radius: 8px;
+    border: 1px solid #d7dae0; font-size: 1rem; resize: vertical; font-family: inherit;
+  }
+  button {
+    margin-top: 12px; background: var(--navy); color: #fff; border: none;
+    padding: 10px 22px; border-radius: 8px; font-size: 0.95rem; cursor: pointer;
+  }
+  button:disabled { opacity: 0.6; cursor: default; }
+  .answer {
+    margin-top: 20px; padding: 16px; border-left: 4px solid var(--accent);
+    background: #fafafa; border-radius: 6px; white-space: pre-wrap; line-height: 1.5;
+  }
+  .source { margin-top: 10px; font-size: 0.85rem; color: #555; }
+  .examples { margin-top: 18px; }
+  .examples button {
+    background: #fff; color: var(--navy); border: 1px solid #d7dae0;
+    font-size: 0.8rem; padding: 6px 10px; margin: 4px 6px 0 0; border-radius: 20px;
+  }
+  .hint { font-size: 0.8rem; color: #888; margin-top: 6px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>ZAIO Bootcamp Assistant</h1>
+  <p>Ask a question about the Full-Stack AI Engineer Bootcamp Handbook</p>
+</header>
+<main>
+  <div class="card">
+    <textarea id="question" placeholder="e.g. How much do the bootcamp fees cost?"></textarea>
+    <div class="examples" id="examples"></div>
+    <br/>
+    <button id="askBtn">Ask</button>
+    <div class="hint" id="status"></div>
+    <div id="result"></div>
+  </div>
+</main>
+
+<script>
+  const API_BASE = "";
+  const examples = [
+    "How much do the bootcamp fees cost?",
+    "When is orientation day?",
+    "What are the live class times?",
+    "What are the hardware requirements?",
+    "What is the weather like today?"
+  ];
+  const examplesDiv = document.getElementById('examples');
+  examples.forEach(q => {
+    const b = document.createElement('button');
+    b.textContent = q;
+    b.onclick = () => { document.getElementById('question').value = q; };
+    examplesDiv.appendChild(b);
+  });
+
+  const askBtn = document.getElementById('askBtn');
+  const status = document.getElementById('status');
+  const result = document.getElementById('result');
+
+  askBtn.addEventListener('click', async () => {
+    const question = document.getElementById('question').value.trim();
+    if (!question) return;
+    askBtn.disabled = true;
+    status.textContent = "Thinking...";
+    result.innerHTML = "";
+    try {
+      const res = await fetch(`${API_BASE}/ask`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question })
+      });
+      const data = await res.json();
+      result.innerHTML = `
+        <div class="answer">${data.answer}</div>
+        <div class="source">Source: ${data.source}</div>
+      `;
+      status.textContent = "";
+    } catch (err) {
+      status.textContent = "Error contacting the API: " + err.message;
+    } finally {
+      askBtn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
+"""
