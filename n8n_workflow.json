@@ -16,7 +16,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://YOUR-VERCEL-DEPLOYMENT.vercel.app/ask",
+        "url": "https://chatbotragsystem.vercel.app/ask",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ { \"question\": $json.chatInput } }}",
